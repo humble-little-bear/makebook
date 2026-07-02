@@ -1,6 +1,7 @@
 import { PDFDocument, rgb } from 'pdf-lib';
 import { computePairs } from './pairing';
 import fs from 'fs/promises';
+import path from 'path';
 
 export type ConvertOptions = {
   dryRun?: boolean;
@@ -36,35 +37,7 @@ async function buildSheetPage(
   spec: SheetSpec,
   dim: SheetDimensions
 ): Promise<void> {
-  // Embed left page
-  const leftTemp = await PDFDocument.create();
-  const [copiedLeft] = await leftTemp.copyPages(srcDoc, [spec.leftIdx]);
-  leftTemp.addPage(copiedLeft);
-  try {
-    leftTemp
-      .getPage(0)
-      .drawRectangle({ x: 0, y: 0, width: 1, height: 1, color: rgb(1, 1, 1), opacity: 0 });
-  } catch (_e) {
-    // ignore
-  }
-  const leftBytes = await leftTemp.save();
-  const leftEmbArr = await outDoc.embedPdf(leftBytes);
-  const embLeft = leftEmbArr[0];
-
-  // Embed right page
-  const rightTemp = await PDFDocument.create();
-  const [copiedRight] = await rightTemp.copyPages(srcDoc, [spec.rightIdx]);
-  rightTemp.addPage(copiedRight);
-  try {
-    rightTemp
-      .getPage(0)
-      .drawRectangle({ x: 0, y: 0, width: 1, height: 1, color: rgb(1, 1, 1), opacity: 0 });
-  } catch (_e) {
-    // ignore
-  }
-  const rightBytes = await rightTemp.save();
-  const rightEmbArr = await outDoc.embedPdf(rightBytes);
-  const embRight = rightEmbArr[0];
+  const [embLeft, embRight] = await outDoc.embedPdf(srcDoc, [spec.leftIdx, spec.rightIdx]);
 
   const outPage = outDoc.addPage([dim.sheetWidth, dim.sheetHeight]);
 
@@ -121,16 +94,13 @@ function splitOutputPaths(
   outputPath: string,
   reverse: boolean
 ): { oddPath: string; evenPath: string } {
-  const lastSep = outputPath.lastIndexOf('/');
-  const lastDot = outputPath.lastIndexOf('.');
-  const dir = lastSep >= 0 ? outputPath.substring(0, lastSep + 1) : '';
-  const filename = lastSep >= 0 ? outputPath.substring(lastSep + 1) : outputPath;
-  const base = lastDot > lastSep ? filename.substring(0, lastDot - lastSep - 1) : filename;
-  const ext = lastDot > lastSep ? filename.substring(lastDot - lastSep - 1) : '.pdf';
+  const dir = path.dirname(outputPath);
+  const ext = path.extname(outputPath) || '.pdf';
+  const base = path.basename(outputPath, ext);
   const suffix = reverse ? '-reverse' : '';
   return {
-    oddPath: `${dir}odd-${base}${suffix}${ext}`,
-    evenPath: `${dir}even-${base}${suffix}${ext}`,
+    oddPath: path.join(dir, `odd-${base}${suffix}${ext}`),
+    evenPath: path.join(dir, `even-${base}${suffix}${ext}`),
   };
 }
 
@@ -169,7 +139,12 @@ export async function convertPdfToBooklet(
         // ignore
       }
     }
-    srcDoc.addPage([bw, bh]);
+    const blankPage = srcDoc.addPage([bw, bh]);
+    try {
+      blankPage.drawRectangle({ x: 0, y: 0, width: 1, height: 1, color: rgb(1, 1, 1), opacity: 0 });
+    } catch (_e) {
+      // ignore
+    }
     pageCount += 1;
   }
 
@@ -233,15 +208,23 @@ export async function convertPdfToBooklet(
     const { oddPath, evenPath } = splitOutputPaths(outputPath, reverse);
     await fs.writeFile(oddPath, await oddDoc.save());
     console.log(`Wrote odd sheets: ${oddPath} (${oddDoc.getPageCount()} sheets)`);
-    await fs.writeFile(evenPath, await evenDoc.save());
-    console.log(`Wrote even sheets: ${evenPath} (${evenDoc.getPageCount()} sheets)`);
+
+    const hasEvenSheets = evenSheets.length > 0;
+    if (hasEvenSheets) {
+      await fs.writeFile(evenPath, await evenDoc.save());
+      console.log(`Wrote even sheets: ${evenPath} (${evenDoc.getPageCount()} sheets)`);
+    }
 
     // Print user guidance
     console.log('');
     console.log('Duplex printing instructions:');
     console.log(`  1. Print ${oddPath} first (front sides).`);
-    console.log(`  2. Flip the printed paper stack.`);
-    console.log(`  3. Print ${evenPath} (back sides).`);
+    if (hasEvenSheets) {
+      console.log(`  2. Flip the printed paper stack.`);
+      console.log(`  3. Print ${evenPath} (back sides).`);
+    } else {
+      console.log('  (No back sides/even sheets to print for this document)');
+    }
   } else {
     // Single document mode (existing behavior)
     const outDoc = await PDFDocument.create();

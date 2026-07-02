@@ -128,13 +128,11 @@ describe('convertPdfToBooklet', () => {
         await convertPdfToBooklet(input, output, { split: true, pageOrder: 'reverse' });
         const oddPath = path.join(dir, 'odd-out-reverse.pdf');
         const evenPath = path.join(dir, 'even-out-reverse.pdf');
-        // 2 pages → 1 sheet → only odd file has content
+        // 2 pages → 1 sheet → only odd file has content, even file should not be created
         const oddCount = await getPageCount(oddPath);
         expect(oddCount).toBe(1);
-        // even file is created but has no sheets (pdf-lib save() may report 1 page for empty docs)
-        // The important thing is the odd file has the correct content
         const evenExists = await fs.stat(evenPath).then(() => true, () => false);
-        expect(evenExists).toBe(true);
+        expect(evenExists).toBe(false);
       } finally {
         await fs.rm(dir, { recursive: true, force: true });
       }
