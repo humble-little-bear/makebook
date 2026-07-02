@@ -131,7 +131,10 @@ describe('convertPdfToBooklet', () => {
         // 2 pages → 1 sheet → only odd file has content, even file should not be created
         const oddCount = await getPageCount(oddPath);
         expect(oddCount).toBe(1);
-        const evenExists = await fs.stat(evenPath).then(() => true, () => false);
+        const evenExists = await fs.stat(evenPath).then(
+          () => true,
+          () => false
+        );
         expect(evenExists).toBe(false);
       } finally {
         await fs.rm(dir, { recursive: true, force: true });

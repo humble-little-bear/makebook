@@ -12,10 +12,7 @@ program
   .argument('<input>', 'input PDF file')
   .option('-o, --output <file>', 'output PDF file', 'booklet.pdf')
   .option('--dry-run', 'do not write output file')
-  .option(
-    '--split',
-    'generate separate odd-sheet and even-sheet PDFs for manual duplex printing'
-  )
+  .option('--split', 'generate separate odd-sheet and even-sheet PDFs for manual duplex printing')
   .option(
     '--page-order <order>',
     'page order: "normal" (default) or "reverse" (for printers that deposit face-up)',

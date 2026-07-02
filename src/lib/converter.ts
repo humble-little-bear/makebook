@@ -179,9 +179,11 @@ export async function convertPdfToBooklet(
   const pairsArr = computePairs(pageCount);
 
   // Collect all sheet specs with their original sheet index
-  const allSheets: SheetSpec[] = pairsArr.map(
-    ([leftIdx, rightIdx], i) => ({ leftIdx, rightIdx, sheetIndex: i })
-  );
+  const allSheets: SheetSpec[] = pairsArr.map(([leftIdx, rightIdx], i) => ({
+    leftIdx,
+    rightIdx,
+    sheetIndex: i,
+  }));
 
   if (split) {
     // Split into odd-sheet and even-sheet groups based on original sheet index
