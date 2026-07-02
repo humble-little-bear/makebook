@@ -10,6 +10,7 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
+SCRIPTS_DIR="$(pwd)/scripts"
 
 TMPDIR=$(mktemp -d -t makebook-smoke-XXXXX)
 trap 'rm -rf "$TMPDIR"' EXIT
@@ -74,6 +75,7 @@ v_normal_2p() {
   local sheets
   sheets=$(pdf_pages "$d/booklet.pdf")
   [ "$sheets" = "1" ] || { red "  ❌ 2p normal: expected 1 sheet, got $sheets"; return 1; }
+  node "$SCRIPTS_DIR/verify_content.mjs" "$d/booklet.pdf" 2 || return 1
 }
 
 v_normal_3p() {
@@ -81,6 +83,7 @@ v_normal_3p() {
   local sheets
   sheets=$(pdf_pages "$d/booklet.pdf")
   [ "$sheets" = "2" ] || { red "  ❌ 3p normal: expected 2 sheets (padded), got $sheets"; return 1; }
+  node "$SCRIPTS_DIR/verify_content.mjs" "$d/booklet.pdf" 3 || return 1
 }
 
 v_normal_8p() {
@@ -88,6 +91,7 @@ v_normal_8p() {
   local sheets
   sheets=$(pdf_pages "$d/booklet.pdf")
   [ "$sheets" = "4" ] || { red "  ❌ 8p normal: expected 4 sheets, got $sheets"; return 1; }
+  node "$SCRIPTS_DIR/verify_content.mjs" "$d/booklet.pdf" 8 || return 1
 }
 
 v_split_2p() {
@@ -97,6 +101,7 @@ v_split_2p() {
   local sheets
   sheets=$(pdf_pages "$d/odd-booklet.pdf")
   [ "$sheets" = "1" ] || { red "  ❌ 2p split: odd expected 1 sheet, got $sheets"; return 1; }
+  node "$SCRIPTS_DIR/verify_content.mjs" "$d/odd-booklet.pdf" 2 --split=odd || return 1
 }
 
 v_split_8p() {
@@ -108,6 +113,8 @@ v_split_8p() {
   even_sheets=$(pdf_pages "$d/even-booklet.pdf")
   [ "$odd_sheets"  = "2" ] || { red "  ❌ 8p split: odd expected 2 sheets, got $odd_sheets";   return 1; }
   [ "$even_sheets" = "2" ] || { red "  ❌ 8p split: even expected 2 sheets, got $even_sheets"; return 1; }
+  node "$SCRIPTS_DIR/verify_content.mjs" "$d/odd-booklet.pdf"  8 --split=odd  || return 1
+  node "$SCRIPTS_DIR/verify_content.mjs" "$d/even-booklet.pdf" 8 --split=even || return 1
 }
 
 v_reverse_8p() {
@@ -115,6 +122,7 @@ v_reverse_8p() {
   local sheets
   sheets=$(pdf_pages "$d/booklet.pdf")
   [ "$sheets" = "4" ] || { red "  ❌ 8p reverse: expected 4 sheets, got $sheets"; return 1; }
+  node "$SCRIPTS_DIR/verify_content.mjs" "$d/booklet.pdf" 8 --reverse || return 1
 }
 
 v_split_reverse_8p() {
@@ -126,6 +134,8 @@ v_split_reverse_8p() {
   even_sheets=$(pdf_pages "$d/even-booklet-reverse.pdf")
   [ "$odd_sheets"  = "2" ] || { red "  ❌ 8p split+reverse: odd expected 2 sheets, got $odd_sheets";   return 1; }
   [ "$even_sheets" = "2" ] || { red "  ❌ 8p split+reverse: even expected 2 sheets, got $even_sheets"; return 1; }
+  node "$SCRIPTS_DIR/verify_content.mjs" "$d/odd-booklet-reverse.pdf"  8 --reverse --split=odd  || return 1
+  node "$SCRIPTS_DIR/verify_content.mjs" "$d/even-booklet-reverse.pdf" 8 --reverse --split=even || return 1
 }
 
 v_split_2p_reverse() {
@@ -135,6 +145,7 @@ v_split_2p_reverse() {
   local sheets
   sheets=$(pdf_pages "$d/odd-booklet-reverse.pdf")
   [ "$sheets" = "1" ] || { red "  ❌ 2p split+reverse: odd expected 1 sheet, got $sheets"; return 1; }
+  node "$SCRIPTS_DIR/verify_content.mjs" "$d/odd-booklet-reverse.pdf" 2 --reverse --split=odd || return 1
 }
 
 v_dryrun() {

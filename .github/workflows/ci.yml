@@ -20,6 +20,8 @@ jobs:
           cache: 'pnpm'
       - name: Install dependencies
         run: pnpm install
+      - name: Install system deps
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
       - name: Check format
         run: |
           pnpm run format
