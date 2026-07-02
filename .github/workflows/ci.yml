@@ -32,3 +32,5 @@ jobs:
         run: pnpm run build
       - name: Test
         run: pnpm test
+      - name: Smoke test
+        run: pnpm run smoke-test

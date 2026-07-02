@@ -11,6 +11,7 @@
     "dev": "node -r ts-node/register src/index.ts",
     "start": "node dist/index.js",
     "test": "vitest",
+    "smoke-test": "bash scripts/smoke_test.sh",
     "format": "prettier --write ."
   },
   "files": [
